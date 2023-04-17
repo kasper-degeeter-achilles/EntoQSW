@@ -2,7 +2,7 @@ import sys
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
-from PIL import Image, ImageTk, ImageOps
+from PIL import Image, ImageTk
 import logging
 
 from application.serial import TooManyDevicesAvailableException, NoDeviceAvailableException, \
@@ -57,7 +57,7 @@ class UI:
     def __init__(self, window, main_service, async_loop) -> None:
         self._window = window
         self._main_service = main_service
-        # self._main_service.set_ui(self)
+        self._main_service.set_ui(self)
         self._main_service.update_function = lambda: self.update_latest_image()
         self.async_loop = async_loop
 
@@ -124,8 +124,7 @@ class UI:
     def update_latest_image(self):
         logging.info('Inside update latest image')
         self.image = self._main_service.processedImg
-        self.image = ImageOps.contain(self.image, (self._previewFrame.winfo_width(), self._previewFrame.winfo_height()))
-        #self.image = self.image.resize((549, 367))
+        self.image = self.image.resize((549, 367))
         self.processed_image = ImageTk.PhotoImage(self.image)
         self._imageLabel['image'] = self.processed_image
         self._imageLabel.pack(expand=True)

@@ -9,12 +9,13 @@ from PIL import Image
 from random import randint
 
 CLOSE_ALL_VALVES = bytes(str(0) + '\n', 'utf-8')
-
+BAUD_RATE=115200
 
 class Cage:
 
     def __init__(self, index: int):
         self.ID = index
+        self.fireAction=""
         self.name = None
         self.capacity = 20000
         self.numberMales: int = 0
@@ -92,7 +93,8 @@ class Application:
         self.ui = ui
 
     def set_communication_device(self, device):
-        self.serial_service.device = device
+        #self.serial_service.device = device
+        self.serial_service.open(device, BAUD_RATE, False)
 
     def activate_camera(self):
         try:
@@ -127,7 +129,6 @@ class Application:
             raise RuntimeError(f'An error occurred while trying to communicate with camera')
 
     def acquire_images(self):
-
         try:
             if self.cam is None:
                 logging.error('Camera does not exist')
@@ -178,9 +179,13 @@ class Application:
 
     def fire_to_cage(self, cage):
         i = 0
-        MESSAGE = bytes(str(cage.ID + 10) + '\n', 'utf-8')  # 10 added to avoid bug with switching relais
+        #MESSAGE = bytes(str(cage.ID + 10) + '\n', 'utf-8')  # 10 added to avoid bug with switching relais
+        message={
+            "action": cage.fireAction
+        }
         logging.info(f'Fired to cage {cage.ID}')
-        self.serial_service.write(MESSAGE)
+        #self.serial_service.write(MESSAGE)
+        self.serial_service.writeJSON(message)
 
     def update_male_percentage(self, percentage):
         if percentage > 100:
@@ -276,6 +281,8 @@ class Application:
                         elif childinchild.tag == 'male_percentage':
                             cage.male_percentage = int(childinchild.text)
                             cage.set_required_numbers()
+                        elif childinchild.tag == 'action':
+                            cage.fireAction = childinchild.text
                     self.cages.append(cage)
         except ElementTree.ParseError as err:
             logging.critical(
