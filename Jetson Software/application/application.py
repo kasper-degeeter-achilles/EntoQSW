@@ -96,6 +96,40 @@ class Application:
         #self.serial_service.device = device
         self.serial_service.open(device, BAUD_RATE, False)
 
+    def trigger(self):
+        try:
+            self.device_manager = gx.DeviceManager()
+            dev_num, dev_info_list = self.device_manager.update_device_list()
+            camera = self.cameraSettings[0]
+            if dev_num == 0:
+                raise RuntimeError('No camera connected?')
+
+            self.cam = self.device_manager.open_device_by_index(1)
+            self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)  # set trigger mode ON
+            self.cam.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)  # Hardware trigger on Line 0 of camera
+            # cam.TriggerDelay.set(0) #No additional trigger delay required. Take picture as fast as possible
+            self.cam.ExposureTime.set(camera.exposure)  # set exposure
+            self.cam.PixelFormat.set(17301505)  # TODO: check pixel format
+            self.cam.Gain.set(camera.gain)  # sensor gain
+
+            if camera.awb == 1:  # set auto white balance
+                self.cam.BalanceWhiteAuto.set(1)
+            else:
+                self.cam.BalanceWhiteAuto.set(0)
+                self.cam.BalanceRatioSelector.set(0)
+                self.cam.BalanceRatio.set(camera.wbr)
+                self.cam.BalanceRatioSelector.set(2)
+                self.cam.BalanceRatio.set(camera.wbb)
+            self.cam.stream_on()
+            self.acquire_images()
+            self.stop_camera()
+
+        except Exception as err:
+            logging.warning(f'{self.__class__.__name__.upper()}: An error occured while communicating with camera '
+                            f'due to: '
+                            f'{err.args[0]}')
+            raise RuntimeError(f'An error occurred while trying to communicate with camera')
+
     def activate_camera(self):
         try:
             self.device_manager = gx.DeviceManager()

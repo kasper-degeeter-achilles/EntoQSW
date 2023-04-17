@@ -110,6 +110,10 @@ class UI:
                                                 command=lambda: self.set_percentage())
         self._malePercentageButton.grid(column=0, row=2, columnspan=2)
 
+        self._manualTriggerButton = ttk.Button(master=self._settingsFrame, text='Trigger',
+                                               command=lambda: self._async_task(self.trigger))
+        self._manualTriggerButton.grid(column=0, row=3, columnspan=2)
+
         self.image = Image.open("EntoQ_Symbol_main.png")
         self.processed_image = ImageTk.PhotoImage(self.image.resize((500, 500)))
 
@@ -171,6 +175,11 @@ class UI:
     def set_percentage(self):
         logging.info("here")
         self._main_service.update_male_percentage(int(self._malePercentage.get()))
+
+    def trigger(self):
+        self.stopped = True
+        logging.info("Sorting stopped, manual trigger")
+        self._main_service.trigger()
 
     ######################################
     # Async / Service methods
