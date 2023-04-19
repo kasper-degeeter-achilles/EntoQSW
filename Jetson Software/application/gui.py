@@ -57,7 +57,6 @@ class UI:
     def __init__(self, window, main_service, async_loop) -> None:
         self._window = window
         self._main_service = main_service
-        self._main_service.set_ui(self)
         self._main_service.update_function = lambda: self.update_latest_image()
         self.async_loop = async_loop
 
