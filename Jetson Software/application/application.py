@@ -121,6 +121,7 @@ class Application:
                 self.cam.BalanceRatioSelector.set(2)
                 self.cam.BalanceRatio.set(camera.wbb)
             self.cam.stream_on()
+            self.cam.TriggerSoftware.send_command()
             self.acquire_images()
             self.stop_camera()
 
@@ -166,7 +167,6 @@ class Application:
         try:
             if self.cam is None:
                 logging.error('Camera does not exist')
-            self.cam.TriggerSoftware.send_command()
             self.rawImage = self.cam.data_stream[0].get_image()  # acquire image
             self.capture_time = datetime.now().strftime('%Y-%m-%d_%Hh%Mm%Ss')
         except Exception as err:

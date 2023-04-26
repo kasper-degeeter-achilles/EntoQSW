@@ -176,7 +176,7 @@ class UI:
         self._main_service.update_male_percentage(int(self._malePercentage.get()))
 
     def trigger(self):
-        self.stopped = True
+        self.stop_sorting()
         logging.info("Sorting stopped, manual trigger")
         self._main_service.trigger()
 
