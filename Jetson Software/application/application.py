@@ -211,13 +211,11 @@ class Application:
         img.save(outfile, compress_level=3)
 
     def fire_to_cage(self, cage):
-        i = 0
-        #MESSAGE = bytes(str(cage.ID + 10) + '\n', 'utf-8')  # 10 added to avoid bug with switching relais
         message={
+            "id": "Fire_fly",
             "action": cage.fireAction
         }
         logging.info(f'Fired to cage {cage.ID}')
-        #self.serial_service.write(MESSAGE)
         self.serial_service.writeJSON(message)
 
     def update_male_percentage(self, percentage):

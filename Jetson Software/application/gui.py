@@ -97,8 +97,12 @@ class UI:
                                       command=lambda: self._async_task(self.stop_sorting))
         self._stopButton.grid(column=0, row=6)
 
+        self.runningStatus = tk.StringVar()
+        self._statusField = ttk.Label(master=self._sideFrame, textvariable=self.runningStatus)
+        self._statusField.grid(column=0, row=7)
+
         self._settingsFrame = tk.Frame(master=self._sideFrame)
-        self._settingsFrame.grid(column=0, row=7)
+        self._settingsFrame.grid(column=0, row=8)
 
         self._malePercentageLabel = ttk.Label(master=self._settingsFrame, text='Desired male %')
         self._malePercentageLabel.grid(column=0, row=0)
@@ -146,6 +150,7 @@ class UI:
 
     def start_sorting(self):
         self.stopped = False
+        self.runningStatus.set('Sorting active')
         self._main_service.activate_camera()
         self._main_service.newImage = False
         logging.info('Sorting started')
@@ -169,6 +174,7 @@ class UI:
 
     def stop_sorting(self):
         self.stopped = True
+        self.runningStatus.set('Sorting stopped')
         logging.info("Sorting stopped")
 
     def set_percentage(self):
