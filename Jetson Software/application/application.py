@@ -106,7 +106,7 @@ class Application:
 
             self.cam = self.device_manager.open_device_by_index(1)
             self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)  # set trigger mode ON
-            self.cam.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)  # Hardware trigger on Line 0 of camera
+            self.cam.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)  # Software trigger
             # cam.TriggerDelay.set(0) #No additional trigger delay required. Take picture as fast as possible
             self.cam.ExposureTime.set(camera.exposure)  # set exposure
             self.cam.PixelFormat.set(17301505)  # TODO: check pixel format
@@ -166,6 +166,7 @@ class Application:
         try:
             if self.cam is None:
                 logging.error('Camera does not exist')
+            self.cam.TriggerSoftware.send_command()
             self.rawImage = self.cam.data_stream[0].get_image()  # acquire image
             self.capture_time = datetime.now().strftime('%Y-%m-%d_%Hh%Mm%Ss')
         except Exception as err:
@@ -180,8 +181,6 @@ class Application:
             self.async_loop.run_until_complete(self._async_save_images(
                 self.processedImg))  # TODO: for now store the image, later determine sex and send to cage
             logging.info('Reached update function')
-            fly_sex = self.determine_sex()
-            self.determine_destination(fly_sex)
             self.update_function()
             self.newImage = True
         else:

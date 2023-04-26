@@ -4,8 +4,6 @@ import sys
 import nest_asyncio
 import logging
 
-
-
 from ttkthemes import ThemedTk
 
 from application.application import Application
@@ -39,7 +37,7 @@ def main(async_loop):
 
 
     serial_service = SerialCommunicator()
-    main_service = Application(serial_service, 'settings.xml', async_loop)
+    main_service = Application(serial_service, '/home/entoq/Documents/EntoQSW/P-02894-ENT-Insect-selector/Jetson Software/settings.xml', async_loop)
     if display:
         UI(window, main_service, async_loop)
         logging.debug('Starting Tkinter mainloop')
