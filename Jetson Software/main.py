@@ -4,13 +4,12 @@ import sys
 import nest_asyncio
 import logging
 
-
-
 from ttkthemes import ThemedTk
 
 from application.application import Application
 from application.gui import UI
 from application.serial import SerialCommunicator
+from application.notgui import notUI
 
 nest_asyncio.apply()
 
@@ -26,16 +25,28 @@ logging.getLogger().addHandler(stdout_handler)
 
 
 def main(async_loop):
-    window = ThemedTk(theme='arc')
-    window.title('ENTOQ Fly Monitoring')
-    window.geometry()
+    try:
+        window = ThemedTk(theme='arc')
+        window.title('ENTOQ Fly Monitoring')
+        window.geometry()
+        logging.debug('Instantiating services')
+        display = True
+    except:
+        logging.warning("Could not open a display")
+        display = False
 
-    logging.debug('Instantiating services')
+
     serial_service = SerialCommunicator()
-    main_service = Application(serial_service, 'settings.xml', async_loop)
-    UI(window, main_service, async_loop)
-    logging.debug('Starting Tkinter mainloop')
-    window.mainloop()
+    main_service = Application(serial_service, '/home/entoq/Documents/EntoQSW/P-02894-ENT-Insect-selector/Jetson Software/settings.xml', async_loop)
+    if display:
+        UI(window, main_service, async_loop)
+        logging.debug('Starting Tkinter mainloop')
+        window.mainloop()
+    else:
+        notUI(main_service,async_loop)
+
+
+
 
 
 if __name__ == '__main__':

@@ -57,7 +57,6 @@ class UI:
     def __init__(self, window, main_service, async_loop) -> None:
         self._window = window
         self._main_service = main_service
-        self._main_service.set_ui(self)
         self._main_service.update_function = lambda: self.update_latest_image()
         self.async_loop = async_loop
 
@@ -98,8 +97,12 @@ class UI:
                                       command=lambda: self._async_task(self.stop_sorting))
         self._stopButton.grid(column=0, row=6)
 
+        self.runningStatus = tk.StringVar()
+        self._statusField = ttk.Label(master=self._sideFrame, textvariable=self.runningStatus)
+        self._statusField.grid(column=0, row=7)
+
         self._settingsFrame = tk.Frame(master=self._sideFrame)
-        self._settingsFrame.grid(column=0, row=7)
+        self._settingsFrame.grid(column=0, row=8)
 
         self._malePercentageLabel = ttk.Label(master=self._settingsFrame, text='Desired male %')
         self._malePercentageLabel.grid(column=0, row=0)
@@ -109,6 +112,10 @@ class UI:
         self._malePercentageButton = ttk.Button(master=self._settingsFrame, text='Set',
                                                 command=lambda: self.set_percentage())
         self._malePercentageButton.grid(column=0, row=2, columnspan=2)
+
+        self._manualTriggerButton = ttk.Button(master=self._settingsFrame, text='Trigger',
+                                               command=lambda: self._async_task(self.trigger))
+        self._manualTriggerButton.grid(column=0, row=3, columnspan=2)
 
         self.image = Image.open("EntoQ_Symbol_main.png")
         self.processed_image = ImageTk.PhotoImage(self.image.resize((500, 500)))
@@ -143,6 +150,7 @@ class UI:
 
     def start_sorting(self):
         self.stopped = False
+        self.runningStatus.set('Sorting active')
         self._main_service.activate_camera()
         self._main_service.newImage = False
         logging.info('Sorting started')
@@ -166,11 +174,17 @@ class UI:
 
     def stop_sorting(self):
         self.stopped = True
+        self.runningStatus.set('Sorting stopped')
         logging.info("Sorting stopped")
 
     def set_percentage(self):
         logging.info("here")
         self._main_service.update_male_percentage(int(self._malePercentage.get()))
+
+    def trigger(self):
+        self.stop_sorting()
+        logging.info("Sorting stopped, manual trigger")
+        self._main_service.trigger()
 
     ######################################
     # Async / Service methods

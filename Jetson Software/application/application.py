@@ -96,6 +96,41 @@ class Application:
         #self.serial_service.device = device
         self.serial_service.open(device, BAUD_RATE, False)
 
+    def trigger(self):
+        try:
+            self.device_manager = gx.DeviceManager()
+            dev_num, dev_info_list = self.device_manager.update_device_list()
+            camera = self.cameraSettings[0]
+            if dev_num == 0:
+                raise RuntimeError('No camera connected?')
+
+            self.cam = self.device_manager.open_device_by_index(1)
+            self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)  # set trigger mode ON
+            self.cam.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)  # Software trigger
+            # cam.TriggerDelay.set(0) #No additional trigger delay required. Take picture as fast as possible
+            self.cam.ExposureTime.set(camera.exposure)  # set exposure
+            self.cam.PixelFormat.set(17301505)  # TODO: check pixel format
+            self.cam.Gain.set(camera.gain)  # sensor gain
+
+            if camera.awb == 1:  # set auto white balance
+                self.cam.BalanceWhiteAuto.set(1)
+            else:
+                self.cam.BalanceWhiteAuto.set(0)
+                self.cam.BalanceRatioSelector.set(0)
+                self.cam.BalanceRatio.set(camera.wbr)
+                self.cam.BalanceRatioSelector.set(2)
+                self.cam.BalanceRatio.set(camera.wbb)
+            self.cam.stream_on()
+            self.cam.TriggerSoftware.send_command()
+            self.acquire_images()
+            self.stop_camera()
+
+        except Exception as err:
+            logging.warning(f'{self.__class__.__name__.upper()}: An error occured while communicating with camera '
+                            f'due to: '
+                            f'{err.args[0]}')
+            raise RuntimeError(f'An error occurred while trying to communicate with camera')
+
     def activate_camera(self):
         try:
             self.device_manager = gx.DeviceManager()
@@ -146,8 +181,6 @@ class Application:
             self.async_loop.run_until_complete(self._async_save_images(
                 self.processedImg))  # TODO: for now store the image, later determine sex and send to cage
             logging.info('Reached update function')
-            fly_sex = self.determine_sex()
-            self.determine_destination(fly_sex)
             self.update_function()
             self.newImage = True
         else:
@@ -178,13 +211,11 @@ class Application:
         img.save(outfile, compress_level=3)
 
     def fire_to_cage(self, cage):
-        i = 0
-        #MESSAGE = bytes(str(cage.ID + 10) + '\n', 'utf-8')  # 10 added to avoid bug with switching relais
         message={
+            "id": "Fire_fly",
             "action": cage.fireAction
         }
         logging.info(f'Fired to cage {cage.ID}')
-        #self.serial_service.write(MESSAGE)
         self.serial_service.writeJSON(message)
 
     def update_male_percentage(self, percentage):

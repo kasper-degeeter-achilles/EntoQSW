@@ -8,7 +8,7 @@ import sys
 import os
 import traceback
 
-os.add_dll_directory("C:\Program Files\Daheng Imaging\GalaxySDK\APIDll\Win64")
+# os.add_dll_directory("C:\Program Files\Daheng Imaging\GalaxySDK\APIDll\Win64")
 
 if sys.platform == 'linux2' or sys.platform == 'linux':
     try:
