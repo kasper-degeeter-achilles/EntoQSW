@@ -117,7 +117,7 @@ class UI:
                                                command=lambda: self._async_task(self.trigger))
         self._manualTriggerButton.grid(column=0, row=3, columnspan=2)
 
-        self.image = Image.open("EntoQ_Symbol_main.png")
+        self.image = Image.open("/home/entoq/Documents/EntoQSW/P-02894-ENT-Insect-selector/Jetson Software/EntoQ_Symbol_main.png")
         self.processed_image = ImageTk.PhotoImage(self.image.resize((500, 500)))
 
         self._imageLabel = ttk.Label(master=self._previewFrame, image=self.processed_image, text='no image')
@@ -178,7 +178,7 @@ class UI:
         logging.info("Sorting stopped")
 
     def set_percentage(self):
-        logging.info("here")
+        logging.info("Update percentage")
         self._main_service.update_male_percentage(int(self._malePercentage.get()))
 
     def trigger(self):

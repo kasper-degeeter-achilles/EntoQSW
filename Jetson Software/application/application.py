@@ -9,7 +9,7 @@ from PIL import Image
 from random import randint
 
 CLOSE_ALL_VALVES = bytes(str(0) + '\n', 'utf-8')
-BAUD_RATE=115200
+BAUD_RATE=9600
 
 class Cage:
 
@@ -144,7 +144,7 @@ class Application:
             self.cam.TriggerSource.set(gx.GxTriggerSourceEntry.LINE0)  # Hardware trigger on Line 0 of camera
             # cam.TriggerDelay.set(0) #No additional trigger delay required. Take picture as fast as possible
             self.cam.ExposureTime.set(camera.exposure)  # set exposure
-            self.cam.PixelFormat.set(17301505)  # TODO: check pixel format
+            self.cam.PixelFormat.set(17825797)  # TODO: Mono8 17301505 Mono12 17825797
             self.cam.Gain.set(camera.gain)  # sensor gain
 
             if camera.awb == 1:  # set auto white balance
@@ -181,7 +181,10 @@ class Application:
             self.async_loop.run_until_complete(self._async_save_images(
                 self.processedImg))  # TODO: for now store the image, later determine sex and send to cage
             logging.info('Reached update function')
-            self.update_function()
+            fly_sex = self.determine_sex()
+            self.determine_destination(fly_sex)
+            if self.acquire_images is not None and self.update_function is not None:
+                self.update_function()
             self.newImage = True
         else:
             self.newImage = False
@@ -212,11 +215,11 @@ class Application:
 
     def fire_to_cage(self, cage):
         message={
-            "id": "Fire_fly",
+            "id": "fire",
             "action": cage.fireAction
         }
         logging.info(f'Fired to cage {cage.ID}')
-        self.serial_service.writeJSON(message)
+        self.serial_service.writeandreadJSON(message)
 
     def update_male_percentage(self, percentage):
         if percentage > 100:

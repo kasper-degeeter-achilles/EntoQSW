@@ -8,7 +8,7 @@ from ttkthemes import ThemedTk
 
 from application.application import Application
 from application.gui import UI
-from application.serial import SerialCommunicator
+from application.serialcomms import SerialJSON
 from application.notgui import notUI
 
 nest_asyncio.apply()
@@ -36,7 +36,7 @@ def main(async_loop):
         display = False
 
 
-    serial_service = SerialCommunicator()
+    serial_service = SerialJSON(9600)
     main_service = Application(serial_service, '/home/entoq/Documents/EntoQSW/P-02894-ENT-Insect-selector/Jetson Software/settings.xml', async_loop)
     if display:
         UI(window, main_service, async_loop)
@@ -44,9 +44,6 @@ def main(async_loop):
         window.mainloop()
     else:
         notUI(main_service,async_loop)
-
-
-
 
 
 if __name__ == '__main__':
