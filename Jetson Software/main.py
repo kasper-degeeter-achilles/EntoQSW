@@ -14,7 +14,7 @@ from application.notgui import notUI
 nest_asyncio.apply()
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 stdout_handler = logging.StreamHandler(sys.stdout)
@@ -36,7 +36,7 @@ def main(async_loop):
         display = False
 
 
-    serial_service = SerialJSON(9600)
+    serial_service = SerialJSON(115200)
     main_service = Application(serial_service, '/home/entoq/Documents/EntoQSW/P-02894-ENT-Insect-selector/Jetson Software/settings.xml', async_loop)
     if display:
         UI(window, main_service, async_loop)

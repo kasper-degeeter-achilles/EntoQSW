@@ -16,10 +16,10 @@ import json
 from application.exceptions import *
 
 class SerialJSON:
-    _READ_TIMEOUT_SECONDS = 5
+    _READ_TIMEOUT_SECONDS = 2
     _WRITE_TIMEOUT_SECONDS = 1
     _RETRIES = 5
-    _TERMINATOR = b'\n'
+    _TERMINATOR = b'\x00'
 
     def __init__(self, baudrate) -> None:
         self.port = None
@@ -82,11 +82,24 @@ class SerialJSON:
         self.s = None
 
     def writeandreadJSON(self, data: dict):
-        data = self.addcounter(data)
-        attempt = 0
-        self.writeJSON(data)
-        j = self.waitandreadJSON()
-        logging.debug(j)
+        attempt=0
+        looping=True
+        while (looping):
+            self.writeJSON(data)
+            j = self.waitandreadJSON()
+            logging.info("reply received: {}".format(j))
+            if j is not None:
+                if j['count'] != self.counter:
+                    logging.warning("Wrong reply received")
+                    attempt +=1
+                else:
+                    logging.debug("Correct reply received")
+                    looping=False
+            else:
+                attempt +=1
+                logging.warning("No reply was receid, retrying")
+
+        
 
         
     def addcounter(self, data: dict):
@@ -176,7 +189,7 @@ class SerialJSON:
         while(looping) and (time.monotonic() - start_time < self._READ_TIMEOUT_SECONDS):
             try:
                 if not self.s.in_waiting:
-                    time.sleep(0.1)
+                    time.sleep(0.05)
                     logging.debug('waiting for reply')
                 else:
                     logging.debug("Something was received")

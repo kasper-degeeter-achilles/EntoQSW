@@ -9,7 +9,7 @@ from PIL import Image
 from random import randint
 
 CLOSE_ALL_VALVES = bytes(str(0) + '\n', 'utf-8')
-BAUD_RATE=9600
+BAUD_RATE=115200
 
 class Cage:
 
@@ -180,7 +180,7 @@ class Application:
             self.processedImg = Image.fromarray(numpy_image, 'L')
             self.async_loop.run_until_complete(self._async_save_images(
                 self.processedImg))  # TODO: for now store the image, later determine sex and send to cage
-            logging.info('Reached update function')
+            logging.debug('Reached update function')
             fly_sex = self.determine_sex()
             self.determine_destination(fly_sex)
             if self.acquire_images is not None and self.update_function is not None:
@@ -188,7 +188,7 @@ class Application:
             self.newImage = True
         else:
             self.newImage = False
-            logging.info('No picture taken')
+            logging.debug('No picture taken')
 
     def stop_camera(self):
         try:

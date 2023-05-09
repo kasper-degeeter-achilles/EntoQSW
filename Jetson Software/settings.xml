@@ -5,7 +5,7 @@
   <camera>
     <name>SexCam</name>
     <serial>FCE21060070</serial>
-    <gain>20</gain>
+    <gain>24</gain>
     <exposure>35000</exposure>
     <awb>0</awb>
     <wbr>1.4</wbr>
@@ -15,14 +15,17 @@
     <name>Cage1</name>
     <capacity>100</capacity>
     <male_percentage>30</male_percentage>
+    <action>straight</action>
   </cage>
   <cage>
     <name>Cage2</name>
     <capacity>13000</capacity>
     <male_percentage>30</male_percentage>
+    <action>straight</action>
   </cage>
   <cage>
     <name>Trash</name>
     <capacity>100000</capacity>
+    <action>straight</action>
   </cage>
 </data>
