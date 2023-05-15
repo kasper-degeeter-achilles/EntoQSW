@@ -4,6 +4,8 @@ import sys
 import nest_asyncio
 import logging
 
+import faulthandler
+
 from ttkthemes import ThemedTk
 
 from application.application import Application
@@ -14,7 +16,7 @@ from application.notgui import notUI
 nest_asyncio.apply()
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 stdout_handler = logging.StreamHandler(sys.stdout)
@@ -22,6 +24,8 @@ stdout_handler.setLevel(logging.DEBUG)
 stdout_handler.setFormatter(formatter)
 
 logging.getLogger().addHandler(stdout_handler)
+
+faulthandler.enable()
 
 
 def main(async_loop):
@@ -37,7 +41,7 @@ def main(async_loop):
 
 
     serial_service = SerialJSON(115200)
-    main_service = Application(serial_service, '/home/entoq/Documents/EntoQSW/P-02894-ENT-Insect-selector/Jetson Software/settings.xml', async_loop)
+    main_service = Application(serial_service, '/home/entoq/Documents/EntoQSW/Jetson Software/settings.xml', async_loop)
     if display:
         UI(window, main_service, async_loop)
         logging.debug('Starting Tkinter mainloop')

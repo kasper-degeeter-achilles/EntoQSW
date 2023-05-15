@@ -2,7 +2,7 @@ import sys
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 import logging
 
 from application.serial import TooManyDevicesAvailableException, NoDeviceAvailableException, \
@@ -106,7 +106,7 @@ class UI:
 
         self._malePercentageLabel = ttk.Label(master=self._settingsFrame, text='Desired male %')
         self._malePercentageLabel.grid(column=0, row=0)
-        self._malePercentage = ttk.Entry(master=self._settingsFrame, text="30")
+        self._malePercentage = ttk.Entry(master=self._settingsFrame)
         self._malePercentage.insert(0, '30')
         self._malePercentage.grid(column=1, row=0)
         self._malePercentageButton = ttk.Button(master=self._settingsFrame, text='Set',
@@ -117,7 +117,32 @@ class UI:
                                                command=lambda: self._async_task(self.trigger))
         self._manualTriggerButton.grid(column=0, row=3, columnspan=2)
 
-        self.image = Image.open("/home/entoq/Documents/EntoQSW/P-02894-ENT-Insect-selector/Jetson Software/EntoQ_Symbol_main.png")
+        self._ROIXlabel = ttk.Label(master=self._settingsFrame, text='ROIX')
+        self._ROIXlabel.grid(column=0,row=4)
+        self._ROIX = ttk.Entry(master=self._settingsFrame)
+        self._ROIX.insert(1, '0')
+        self._ROIX.grid(column=1, row=4)
+        self._ROIYlabel = ttk.Label(master=self._settingsFrame, text='ROIY')
+        self._ROIYlabel.grid(column=0,row=5)
+        self._ROIY = ttk.Entry(master=self._settingsFrame)
+        self._ROIY.insert(2, '0')
+        self._ROIY.grid(column=1, row=5)
+        self._WIDTHlabel = ttk.Label(master=self._settingsFrame, text='WIDTH')
+        self._WIDTHlabel.grid(column=0,row=6)
+        self._WIDTH = ttk.Entry(master=self._settingsFrame)
+        self._WIDTH.insert(3, '0')
+        self._WIDTH.grid(column=1, row=6)
+        self._HEIGHTlabel = ttk.Label(master=self._settingsFrame, text='HEIGHT')
+        self._HEIGHTlabel.grid(column=0,row=7)
+        self._HEIGHT = ttk.Entry(master=self._settingsFrame)
+        self._HEIGHT.insert(4, '0')
+        self._HEIGHT.grid(column=1, row=7)
+        self._ROIButton = ttk.Button(master=self._settingsFrame, text='Set ROI',
+                                                command=lambda: self.set_ROI())
+        self._ROIButton.grid(column=0, row=8, columnspan=2)
+
+
+        self.image = Image.open("/home/entoq/Documents/EntoQSW/Jetson Software/EntoQ_Symbol_main.png")
         self.processed_image = ImageTk.PhotoImage(self.image.resize((500, 500)))
 
         self._imageLabel = ttk.Label(master=self._previewFrame, image=self.processed_image, text='no image')
@@ -180,6 +205,11 @@ class UI:
     def set_percentage(self):
         logging.info("Update percentage")
         self._main_service.update_male_percentage(int(self._malePercentage.get()))
+
+
+    def set_ROI(self):
+        logging.info('Update ROI')
+        self._main_service.update_ROI(int(self._ROIX.get()), int(self._ROIY.get()), int(self._WIDTH.get()), int(self._HEIGHT.get()))
 
     def trigger(self):
         self.stop_sorting()

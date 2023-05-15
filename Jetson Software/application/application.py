@@ -58,10 +58,9 @@ class Cage:
 
 class Camera:
 
-    def __init__(self, camera_index: int) -> None:
-        self.name: str = f'cam{camera_index}'
+    def __init__(self) -> None:
         self.serial_number: str = ''
-        self.gain: float = 10.0
+        self.gain: float = 24.0
         self.exposure: float = 100000
         self.awb: float = 1
         self.wbr: float = 1
@@ -69,13 +68,17 @@ class Camera:
         self.data = None
         self.image = None
         self.cam = None
+        self.roix: int = 1
+        self.roiy: int = 1
+        self.roiwidth: int = 5000 #TODO: check maximum width
+        self.roiheight: int = 3000 #TODO: check maximum heigth
 
 
 class Application:
 
     def __init__(self, serial_service, file_name: str, async_loop):
         self.serial_service = serial_service
-        self.cameraSettings = []
+        self.camera = Camera()
         self.cam = None
         self.cages = []
         self.capture_time = None
@@ -93,14 +96,12 @@ class Application:
         self.ui = ui
 
     def set_communication_device(self, device):
-        #self.serial_service.device = device
         self.serial_service.open(device, BAUD_RATE, False)
 
     def trigger(self):
         try:
             self.device_manager = gx.DeviceManager()
             dev_num, dev_info_list = self.device_manager.update_device_list()
-            camera = self.cameraSettings[0]
             if dev_num == 0:
                 raise RuntimeError('No camera connected?')
 
@@ -108,18 +109,14 @@ class Application:
             self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)  # set trigger mode ON
             self.cam.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)  # Software trigger
             # cam.TriggerDelay.set(0) #No additional trigger delay required. Take picture as fast as possible
-            self.cam.ExposureTime.set(camera.exposure)  # set exposure
+            self.cam.ExposureTime.set(self.camera.exposure)  # set exposure
+            logging.debug(self.cam.ExposureTime.get())
+            logging.debug(self.camera.exposure)
+            
             self.cam.PixelFormat.set(17301505)  # TODO: check pixel format
-            self.cam.Gain.set(camera.gain)  # sensor gain
-
-            if camera.awb == 1:  # set auto white balance
-                self.cam.BalanceWhiteAuto.set(1)
-            else:
-                self.cam.BalanceWhiteAuto.set(0)
-                self.cam.BalanceRatioSelector.set(0)
-                self.cam.BalanceRatio.set(camera.wbr)
-                self.cam.BalanceRatioSelector.set(2)
-                self.cam.BalanceRatio.set(camera.wbb)
+            self.cam.Gain.set(self.camera.gain)  # sensor gain
+            #self.cam.RegionMode.set(gx.GxRegionSendModeEntry.SINGLE_ROI)
+            #self.cam.RegionSelector.set(gx.GxRegionSelectorEntry.REGION0)
             self.cam.stream_on()
             self.cam.TriggerSoftware.send_command()
             self.acquire_images()
@@ -135,27 +132,17 @@ class Application:
         try:
             self.device_manager = gx.DeviceManager()
             dev_num, dev_info_list = self.device_manager.update_device_list()
-            camera = self.cameraSettings[0]
-            if dev_num == 0:
-                raise RuntimeError('No camera connected?')
 
             self.cam = self.device_manager.open_device_by_index(1)
             self.cam.TriggerMode.set(gx.GxSwitchEntry.ON)  # set trigger mode ON
             self.cam.TriggerSource.set(gx.GxTriggerSourceEntry.LINE0)  # Hardware trigger on Line 0 of camera
             # cam.TriggerDelay.set(0) #No additional trigger delay required. Take picture as fast as possible
-            self.cam.ExposureTime.set(camera.exposure)  # set exposure
-            self.cam.PixelFormat.set(17825797)  # TODO: Mono8 17301505 Mono12 17825797
-            self.cam.Gain.set(camera.gain)  # sensor gain
-
-            if camera.awb == 1:  # set auto white balance
-                self.cam.BalanceWhiteAuto.set(1)
-            else:
-                self.cam.BalanceWhiteAuto.set(0)
-                self.cam.BalanceRatioSelector.set(0)
-                self.cam.BalanceRatio.set(camera.wbr)
-                self.cam.BalanceRatioSelector.set(2)
-                self.cam.BalanceRatio.set(camera.wbb)
-            self.cam.stream_on()
+            self.cam.ExposureTime.set(self.camera.exposure)  # set exposure
+            logging.debug(self.camera.exposure)
+            logging.debug(self.cam.ExposureTime.get())
+            self.cam.PixelFormat.set(17301505)  # TODO: Mono8 17301505 Mono12 17825797
+            self.cam.Gain.set(self.camera.gain)  # sensor gain
+            
 
         except Exception as err:
             logging.warning(f'{self.__class__.__name__.upper()}: An error occured while communicating with camera '
@@ -167,6 +154,7 @@ class Application:
         try:
             if self.cam is None:
                 logging.error('Camera does not exist')
+            self.cam.stream_on()
             self.rawImage = self.cam.data_stream[0].get_image()  # acquire image
             self.capture_time = datetime.now().strftime('%Y-%m-%d_%Hh%Mm%Ss')
         except Exception as err:
@@ -234,6 +222,51 @@ class Application:
                 cage.male_percentage = percentage
                 cage.set_required_numbers()
 
+    def update_ROI(self, x, y, w, h):
+        logging.debug("%s, %s, %s, %s", x, y, w, h)
+        self.camera.roix = self.round_to_multiple(x, 8)
+        self.camera.roiy = self.round_to_multiple(y, 2)
+        w = self.round_to_multiple(w, 8)
+        h = self.round_to_multiple(h, 2)
+        if self.camera.roix + w >= 5496:
+            self.camera.roiwidth = 5496 - self.camera.roix
+            logging.warning("width was too big")
+        elif w == 0:
+            self.camera.roiwidth = 5496 - self.camera.roix
+        else:
+            self.camera.roiwidth = w
+        if self.camera.roiy + h >= 3672:
+            self.camera.roiheight = 3672 - self.camera.roiy
+            logging.warning("width was too big")
+        elif h == 0:
+            self.camera.roiheight = 3672 - self.camera.roiy
+        else:
+            self.camera.roiheight = h
+
+        logging.debug("Setting ROI:")
+        logging.debug("%s, %s, %s, %s", self.camera.roix, self.camera.roiy, self.camera.roiwidth, self.camera.roiheight)
+        self.activate_camera()
+        try:
+            self.cam.Width.set(16)
+            self.cam.Height.set(2)
+            self.cam.OffsetX.set(0)
+            self.cam.OffsetY.set(0)
+            self.cam.OffsetX.set(int(self.camera.roix))
+            self.cam.OffsetY.set(int(self.camera.roiy))
+            self.cam.Width.set(int(self.camera.roiwidth))
+            self.cam.Height.set(int(self.camera.roiheight))
+            logging.debug(self.cam.OffsetX)
+        except Exception as err:
+            logging.warning(f'{self.__class__.__name__.upper()}: An error occured while communicating with camera '
+                            f'due to: '
+                            f'{err.args[0]}')
+            raise RuntimeError(f'An error occurred while trying to communicate with camera')
+        self.stop_camera()
+
+    @staticmethod
+    def round_to_multiple(number, multiple):
+        return multiple * round(number / multiple)
+
     @staticmethod
     def determine_sex():
         # TODO: send image to AI and get feedback
@@ -272,28 +305,30 @@ class Application:
 
             for child in settings_root:
                 if child.tag == 'camera':
-                    camera_index = camera_index + 1
-                    camera = Camera(camera_index)
                     for childchild in child:
                         if childchild.tag == 'name':
-                            camera.name = childchild.text
+                            self.camera.name = childchild.text
                         elif childchild.tag == 'serial':
-                            camera.serial_number = childchild.text
+                            self.camera.serial_number = childchild.text
                         elif childchild.tag == 'gain':
-                            camera.gain = float(childchild.text)
+                            self.camera.gain = float(childchild.text)
                         elif childchild.tag == 'exposure':
-                            camera.exposure = float(childchild.text)
-                        elif childchild.tag == 'rotation':
-                            camera.rotation = float(childchild.text)
+                            self.camera.exposure = float(childchild.text)
                         elif childchild.tag == 'awb':
-                            camera.awb = float(childchild.text)
+                            self.camera.awb = float(childchild.text)
                         elif childchild.tag == 'wbr':
-                            camera.wbr = float(childchild.text)
+                            self.camera.wbr = float(childchild.text)
                         elif childchild.tag == 'wbb':
-                            camera.wbb = float(childchild.text)
+                            self.camera.wbb = float(childchild.text)
+                        elif childchild.tag == 'roix':
+                            self.camera.roix = float(childchild.text)
+                        elif childchild.tag == 'roiy':
+                            self.camera.roiy = float(childchild.text)
+                        elif childchild.tag == 'roiwidth':
+                            self.camera.roiwidth = float(childchild.text)
+                        elif childchild.tag == 'roiheight':
+                            self.camera.roiheight = float(childchild.text)
 
-                    if camera.serial_number != '':
-                        self.cameraSettings.append(camera)
                 elif child.tag == 'savedirectory':
                     self.save_directory = child.text
                 elif child.tag == 'logdirectory':
